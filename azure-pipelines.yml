@@ -1,5 +1,6 @@
 name: Docker Build and Push
 
+# Trigger the workflow on pushes to the main branch
 on:
   push:
     branches:
@@ -9,20 +10,23 @@ jobs:
   build:
     name: Build and Push Docker Image
     runs-on: self-hosted  # Use the self-hosted runner
-    labels: [githubrunner] # Specify the runner label
+    labels: [githubrunner]  # Specify the runner label
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Login to Azure Container Registry
+    - name: Log in to Azure Container Registry
+      env:
+        AZURE_USERNAME: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+        AZURE_PASSWORD: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
       run: |
-        echo "${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}" | docker login team13acr.azurecr.io -u ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }} --password-stdin
+        echo "$AZURE_PASSWORD" | docker login team13acr.azurecr.io -u $AZURE_USERNAME --password-stdin
 
-    - name: Build Docker image
+    - name: Build Docker Image
       run: |
-        docker build -t team13acr.azurecr.io/team13week2:${{ github.run_id }} -f Dockerfile.txt .
+        docker build -t team13acr.azurecr.io/team13week2:${{ github.run_number }} -f $(Build.SourcesDirectory)/Dockerfile.txt .
 
-    - name: Push Docker image
+    - name: Push Docker Image
       run: |
-        docker push team13acr.azurecr.io/team13week2:${{ github.run_id }}
+        docker push team13acr.azurecr.io/team13week2:${{ github.run_number }}
